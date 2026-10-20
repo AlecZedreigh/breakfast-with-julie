@@ -504,9 +504,7 @@ function renderCheckbox(){
     <div class="hc-check">
       <div class="hc-left"><div class="box" id="box" role="checkbox" aria-checked="false" tabindex="0"></div>I am ${esc(CONFIG.herName)}</div>
       <div class="hc-brand"><span class="logo">🌸</span>JulieCheck<br>Privacy · Terms</div>
-    </div>
-    ${escapeBtn()}`;
-  bindEscape();
+    </div>`;
   const box = $("#box");
   const go = () => {
     box.classList.add("spin");
