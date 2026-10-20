@@ -203,6 +203,10 @@
   .yes-only{padding:34px 22px 26px;text-align:center}
   .yes-only-btn{width:100%;font-size:22px;padding:20px}
   .back-link{margin-top:16px;background:none;border:0;color:var(--ink-soft);font:700 14px "Nunito",sans-serif;text-decoration:underline;cursor:pointer}
+  .hc.bare{background:none;box-shadow:none;overflow:visible;max-width:340px}
+  .hc.bare .yes-only-btn{font-size:26px;padding:24px;animation:pop .6s cubic-bezier(.2,1.4,.4,1) both}
+  .mute-btn{position:fixed;right:16px;bottom:16px;z-index:70;width:46px;height:46px;border-radius:50%;border:0;
+    background:#fff;box-shadow:0 6px 16px rgba(0,0,0,.18);font-size:20px;cursor:pointer}
   .shake{animation:shake .45s}
   @keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
   .escape{display:block;width:100%;background:#fff6f9;border:0;border-top:1px solid #f5dbe3;color:var(--pink-deep);font:800 14px "Nunito";padding:13px;cursor:pointer}
@@ -317,6 +321,9 @@
 </form>
 
 <!-- ============ Fake "Are you Julie?" check ============ -->
+<audio id="bgm" preload="auto" loop playsinline></audio>
+<button class="mute-btn" id="muteBtn" hidden aria-label="Mute music">🎵</button>
+
 <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Julie verification">
   <div class="hc" id="hc"></div>
 </div>
@@ -332,6 +339,10 @@ const CONFIG = {
   // How many "Not this time" verification rounds before the check gives up.
   // 0 = never-ending 😈
   giveUpAfter: 0,
+  // Song that starts on the final Yes page. Add your own audio file to the folder
+  // with this exact name. If the file isn't there, the card simply stays silent.
+  music: "music.mp3",
+  musicStart: 0,        // seconds into the song to start from, e.g. 95 = 1:35
 };
 /* ===================================================================== */
 
@@ -473,9 +484,9 @@ function openCheck(){
   overlay.classList.add("show");
   renderCheckbox();
 }
-function closeCheck(){ stopRunawayCup(); overlay.classList.remove("show"); }
+function closeCheck(){ stopRunawayCup(); overlay.classList.remove("show"); hc.classList.remove("bare"); }
 
-$("#noBtn").onclick = openCheck;
+$("#noBtn").onclick = () => { unlockMusic(); openCheck(); };
 
 function escapeBtn(){
   return `<button class="escape" id="escBtn">Yes!</button>`;
@@ -709,19 +720,52 @@ function finalFail(text, emoji){
 // A page with only one button. "Back" (when offered) returns to the puzzle she came from.
 function showYesOnly({ back }){
   stopRunawayCup();
-  hc.innerHTML = `
-    <div class="hc-head"><small>Julie verification</small><strong>Verified ✅ Only one option left</strong></div>
-    <div class="yes-only">
-      <button class="btn btn-yes yes-only-btn" id="onlyYes">Yes ☕</button>
-      ${back ? `<button class="back-link" id="goBack">← Back, change my answer</button>` : ""}
-    </div>`;
+  if (back){
+    hc.innerHTML = `
+      <div class="hc-head"><small>Julie verification</small><strong>Verified ✅ Only one option left</strong></div>
+      <div class="yes-only">
+        <button class="btn btn-yes yes-only-btn" id="onlyYes">Yes ☕</button>
+        <button class="back-link" id="goBack">← Back, change my answer</button>
+      </div>`;
+    $("#goBack").onclick = loadChallenge;
+  } else {
+    // after the last puzzle: nothing but the Yes button, with the music
+    hc.classList.add("bare");
+    hc.innerHTML = `<button class="btn btn-yes yes-only-btn" id="onlyYes">Yes ☕</button>`;
+    playMusic();
+  }
   $("#onlyYes").onclick = () => {
     closeCheck();
-    $("#noBtn").remove();        // no more "Not this time" after this
+    $("#noBtn")?.remove();       // no more "Not this time" after this
     pickYes();
   };
-  if (back) $("#goBack").onclick = loadChallenge;
 }
+
+// Background song: put your own audio file next to index.html (see CONFIG.music)
+const bgm = $("#bgm");
+// Phones only allow sound that starts from a tap, so "unlock" the player silently
+// on her first tap; the song can then start later on its own.
+function unlockMusic(){
+  if (!CONFIG.music || bgm.src) return;
+  bgm.src = CONFIG.music;
+  bgm.muted = true;
+  bgm.play().then(() => { bgm.pause(); bgm.muted = false; }).catch(() => { bgm.muted = false; });
+}
+function playMusic(){
+  if (!CONFIG.music) return;
+  if (!bgm.src) bgm.src = CONFIG.music;
+  bgm.muted = false;
+  bgm.currentTime = CONFIG.musicStart || 0;
+  bgm.volume = 0;
+  bgm.play().then(() => {
+    $("#muteBtn").hidden = false;
+    const fade = setInterval(() => { bgm.volume = Math.min(1, bgm.volume + .05); if (bgm.volume >= 1) clearInterval(fade); }, 100);
+  }).catch(() => {});          // file missing or blocked: just stay silent
+}
+$("#muteBtn").onclick = () => {
+  bgm.muted = !bgm.muted;
+  $("#muteBtn").textContent = bgm.muted ? "🔇" : "🎵";
+};
 
 function fail(text, emoji){
   noAttempts++;
