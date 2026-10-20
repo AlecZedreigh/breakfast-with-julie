@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Coffee With Me?</title>
+<meta name="description" content="A little invitation for a morning coffee ☕">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☕</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ============ EDIT YOUR DETAILS IN THE <script> CONFIG AT THE BOTTOM ============ */
+  :root{
+    --sky-top:#ffd9e4;
+    --sky-mid:#ffe8dc;
+    --sky-low:#fff6e9;
+    --pink:#f06a95;
+    --pink-deep:#d94a7a;
+    --pink-soft:#ffd3e1;
+    --rose:#ffb3c9;
+    --leaf:#7fb77e;
+    --leaf-deep:#4f8f5a;
+    --cream:#fffaf4;
+    --ink:#4a2b36;
+    --ink-soft:#8a6470;
+    --card:rgba(255,250,246,.86);
+    --shadow:0 20px 50px -18px rgba(170,60,100,.45);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:"Nunito",system-ui,sans-serif;
+    color:var(--ink);
+    background:linear-gradient(180deg,var(--sky-top) 0%,var(--sky-mid) 45%,var(--sky-low) 75%);
+    min-height:100svh;
+    overflow-x:hidden;
+  }
+
+  /* ---------- Morning garden scene ---------- */
+  .scene{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+  .sun{
+    position:absolute;left:50%;top:9%;width:220px;height:220px;margin-left:-110px;border-radius:50%;
+    background:radial-gradient(circle,#fff3c4 0%,#ffd7a1 45%,rgba(255,190,170,0) 70%);
+    animation:rise 6s ease-out both, glow 5s ease-in-out 6s infinite alternate;
+  }
+  @keyframes rise{from{transform:translateY(120px);opacity:.3}to{transform:none;opacity:1}}
+  @keyframes glow{to{transform:scale(1.08)}}
+  .cloud{position:absolute;background:#fff;border-radius:999px;opacity:.75;filter:blur(.5px)}
+  .cloud::before,.cloud::after{content:"";position:absolute;background:#fff;border-radius:50%}
+  .cloud.c1{width:120px;height:34px;top:14%;left:-140px;animation:drift 55s linear infinite}
+  .cloud.c1::before{width:54px;height:54px;top:-26px;left:18px}
+  .cloud.c1::after{width:40px;height:40px;top:-18px;left:62px}
+  .cloud.c2{width:90px;height:26px;top:26%;left:-120px;animation:drift 70s linear 12s infinite}
+  .cloud.c2::before{width:40px;height:40px;top:-20px;left:14px}
+  .cloud.c2::after{width:30px;height:30px;top:-12px;left:46px}
+  @keyframes drift{to{transform:translateX(calc(100vw + 300px))}}
+
+  .garden{position:absolute;left:0;right:0;bottom:0;height:clamp(170px,30vh,250px);
+    display:flex;justify-content:center;overflow:hidden}
+  .garden svg{height:100%;width:auto;flex:none;display:block;margin:0 -1px}
+  .sway{transform-box:fill-box;transform-origin:bottom center;animation:sway 4s ease-in-out infinite alternate}
+  .sway.d1{animation-delay:-1s}.sway.d2{animation-delay:-2.2s}.sway.d3{animation-delay:-3.1s}
+  @keyframes sway{from{transform:rotate(-3deg)}to{transform:rotate(3deg)}}
+
+  .petal{position:absolute;top:-30px;font-size:18px;opacity:.85;animation:fall linear forwards}
+  @keyframes fall{
+    0%{transform:translate(0,0) rotate(0)}
+    100%{transform:translate(var(--dx),110vh) rotate(540deg)}
+  }
+  .butterfly{position:absolute;font-size:22px;animation:flutter 14s ease-in-out infinite}
+  @keyframes flutter{
+    0%{transform:translate(0,0) scaleX(1)}25%{transform:translate(40vw,-6vh) scaleX(1)}
+    50%{transform:translate(70vw,4vh) scaleX(-1)}75%{transform:translate(30vw,-3vh) scaleX(-1)}
+    100%{transform:translate(0,0) scaleX(1)}
+  }
+
+  /* ---------- Layout ---------- */
+  main{position:relative;z-index:1;min-height:100svh;display:grid;place-items:center;padding:28px 16px clamp(150px,26vh,230px)}
+  .screen{display:none;width:100%;max-width:420px}
+  .screen.active{display:block;animation:pop .6s cubic-bezier(.2,1.4,.4,1) both}
+  @keyframes pop{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+
+  .card{
+    position:relative;background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    border-radius:28px;padding:30px 24px 26px;box-shadow:var(--shadow);
+    border:1px solid rgba(255,255,255,.9);text-align:center;
+  }
+  .card::before{ /* little washi tape */
+    content:"";position:absolute;top:-12px;left:50%;width:96px;height:24px;margin-left:-48px;
+    background:repeating-linear-gradient(45deg,#ffc2d4 0 8px,#ffd9e4 8px 16px);
+    transform:rotate(-3deg);border-radius:3px;opacity:.95;box-shadow:0 2px 6px rgba(0,0,0,.06);
+  }
+  .corner{position:absolute;font-size:28px}
+  .corner.tl{top:10px;left:12px;transform:rotate(-18deg)}
+  .corner.br{bottom:10px;right:12px;transform:rotate(14deg)}
+
+  .eyebrow{font-family:"Caveat",cursive;font-size:24px;color:var(--pink-deep);margin:4px 0 0}
+  h1{font-family:"Fraunces",serif;font-weight:700;font-size:clamp(28px,8vw,36px);line-height:1.12;margin:6px 0 10px;letter-spacing:-.01em}
+  h1 em{font-style:normal;color:var(--pink)}
+  .lede{color:var(--ink-soft);font-size:16px;line-height:1.55;margin:0 auto 18px;max-width:30ch}
+
+  /* coffee cup */
+  .cup-wrap{position:relative;width:120px;height:118px;margin:4px auto 6px}
+  .steam{position:absolute;bottom:72px;width:8px;height:30px;border-radius:8px;background:linear-gradient(#fff0,#fff);opacity:0;animation:steam 3s ease-in-out infinite}
+  .steam.s1{left:38px}.steam.s2{left:56px;animation-delay:.8s}.steam.s3{left:74px;animation-delay:1.6s}
+  @keyframes steam{0%{opacity:0;transform:translateY(10px) scaleX(1)}40%{opacity:.9}100%{opacity:0;transform:translateY(-22px) scaleX(1.8)}}
+
+  .details{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:0 0 22px}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1.5px solid var(--pink-soft);border-radius:999px;padding:7px 12px;font-size:14px;font-weight:700;color:var(--ink)}
+
+  .btns{margin-top:24px;display:flex;gap:12px;justify-content:center;align-items:center;min-height:56px}
+  .btn{
+    font:800 17px "Nunito",sans-serif;border:0;border-radius:999px;padding:15px 28px;cursor:pointer;
+    transition:transform .15s ease, box-shadow .2s ease, background .2s;
+  }
+  .btn:active{transform:scale(.96)}
+  .btn-yes{background:linear-gradient(135deg,var(--pink),var(--pink-deep));color:#fff;box-shadow:0 10px 22px -8px rgba(217,74,122,.8);flex:1.4}
+  .btn-yes:hover{transform:translateY(-2px)}
+  .btn-no{background:#fff;color:var(--ink-soft);border:1.5px solid #f0d6de;flex:1.2;white-space:nowrap;padding:15px 16px;font-size:15px}
+  .btn-yes{white-space:nowrap}
+  .btn-yes.picked{color:#fff;outline:3px solid #fff;box-shadow:0 0 0 6px var(--pink-soft),0 10px 22px -8px rgba(217,74,122,.8)}
+  .btn-yes.picked::after{content:" ✓"}
+  .submit-wrap{display:none;margin-top:18px}
+  .submit-wrap.show{display:block;animation:pop .5s cubic-bezier(.2,1.4,.4,1) both}
+  .picked{margin:0 0 10px;color:var(--ink-soft);font-size:15px}
+  .picked b{color:var(--pink-deep)}
+  .btn-submit{width:100%;background:var(--ink);color:#fff;box-shadow:0 10px 22px -10px rgba(74,43,54,.7)}
+  .btn-submit:disabled{opacity:.7}
+  .signoff{font-family:"Caveat",cursive;font-size:22px;color:var(--ink-soft);margin:20px 0 0}
+
+  /* ---------- Yes form ---------- */
+
+  /* ---------- Done ---------- */
+  .done .big{font-size:64px;margin:6px 0 0;animation:bounce 1.6s ease-in-out infinite}
+  @keyframes bounce{50%{transform:translateY(-8px) rotate(-6deg)}}
+  .summary{background:#fff;border-radius:18px;padding:14px 16px;margin:16px 0 0;text-align:left;border:1.5px dashed var(--rose);font-size:15px;line-height:1.7}
+  .summary b{color:var(--pink-deep)}
+
+  /* ---------- Fake "Julie check" ---------- */
+  .overlay{position:fixed;inset:0;z-index:50;background:rgba(74,43,54,.35);backdrop-filter:blur(3px);display:none;place-items:center;padding:16px}
+  .overlay.show{display:grid;animation:fade .25s both}
+  @keyframes fade{from{opacity:0}}
+  .hc{width:100%;max-width:360px;background:#fff;border-radius:10px;box-shadow:0 18px 50px rgba(0,0,0,.25);overflow:hidden;font-family:"Nunito",Arial,sans-serif}
+  .hc-check{display:flex;align-items:center;justify-content:space-between;padding:18px 16px;border:1px solid #e3e3e3;margin:16px;border-radius:4px;background:#f9f9f9}
+  .hc-left{display:flex;align-items:center;gap:12px;font-size:15px;color:#333}
+  .box{width:28px;height:28px;border:2px solid #c1c1c1;border-radius:3px;background:#fff;cursor:pointer;display:grid;place-items:center;transition:all .2s}
+  .box.spin{border-radius:50%;border-color:#4a90e2 #e6e6e6 #e6e6e6 #e6e6e6;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .hc-brand{text-align:center;font-size:10px;color:#777;line-height:1.2}
+  .hc-brand .logo{font-size:22px;display:block}
+  .hc-head{background:var(--pink);color:#fff;padding:16px 16px 14px}
+  .hc-head small{display:block;font-size:13px;opacity:.9}
+  .hc-head strong{display:block;font-size:20px;line-height:1.25;margin-top:2px}
+  .hc-body{padding:10px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+  .tile{aspect-ratio:1;border:0;background:#fdeff3;font-size:clamp(30px,10vw,42px);cursor:pointer;position:relative;transition:transform .15s;border-radius:2px}
+  .tile.sel{transform:scale(.86)}
+  .tile.hop{animation:hop .4s ease}
+  @keyframes hop{0%{transform:scale(.6) translateY(8px)}60%{transform:scale(1.12) translateY(-4px)}100%{transform:none}}
+  .tile.sel::after{content:"✓";position:absolute;top:4px;left:4px;width:20px;height:20px;border-radius:50%;background:#4a90e2;color:#fff;font-size:12px;display:grid;place-items:center;font-weight:800}
+  .captcha-word{font-family:"Caveat",cursive;font-size:72px;text-align:center;letter-spacing:8px;padding:20px 0;font-weight:700;background:repeating-linear-gradient(-30deg,#fdeff3 0 6px,#fff 6px 12px);color:var(--pink-deep);user-select:none}
+  .captcha-word{position:relative}
+  .captcha-word span{display:inline-block}
+  .captcha-word .tiny-no{position:absolute;right:8px;bottom:4px;font:600 10px "Nunito",sans-serif;letter-spacing:0;color:#c9a3b0;transform:none}
+  .hc-input{width:100%;margin-top:10px;padding:12px;border:1.5px solid #ddd;border-radius:6px;font:16px "Nunito";outline:none}
+  .hc-input:focus{border-color:var(--pink)}
+  .slider-track{position:relative;height:52px;background:#fdeff3;border-radius:999px;margin:14px 4px;overflow:hidden}
+  .slider-fill{position:absolute;inset:0 auto 0 0;width:0;background:var(--rose);transition:width .05s}
+  .slider-label{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;color:var(--ink-soft);font-size:14px;pointer-events:none}
+  .slider-knob{position:absolute;top:4px;left:4px;width:44px;height:44px;border-radius:50%;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.18);display:grid;place-items:center;font-size:20px;touch-action:none;cursor:grab}
+  .slider-knob.snap,.slider-fill.snap{transition:all .5s cubic-bezier(.5,1.8,.4,1)}
+  .rot-wrap{display:grid;place-items:center;padding:12px 0 2px}
+  .rot-ring{width:172px;height:172px;border-radius:50%;padding:6px;position:relative}
+  .rot-ring::before{content:"";position:absolute;inset:0;border-radius:50%;
+    background:conic-gradient(#ffb3c9,#f06a95,#ffd166,#7fb77e,#ffb3c9);animation:ring 2.5s linear infinite}
+  .rot-ring.solved::before{background:conic-gradient(#2e9a5a,#7fd39a,#2e9a5a);animation:none}
+  .rot-ring.solved{box-shadow:0 0 0 6px rgba(46,154,90,.18)}
+  @keyframes ring{to{transform:rotate(360deg)}}
+  .rot-img{position:relative;width:100%;height:100%;border-radius:50%;overflow:hidden;background:#fdeff3;border:4px solid #fff;
+    display:grid;place-items:center;font-size:84px;user-select:none}
+  .rot-img{font-size:96px}
+  .rot-img.wobble{animation:wobble .35s ease}
+  @keyframes wobble{30%{transform:scale(.94) rotate(-8deg)}60%{transform:scale(.97) rotate(5deg)}100%{transform:none}}
+  .meter{margin:12px 4px 2px;font-size:12px;color:#666}
+  .meter-bar{height:8px;background:#eee;border-radius:99px;overflow:hidden;margin-top:5px}
+  .meter-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--rose),var(--pink));transition:width .6s ease}
+  .hc-msg{min-height:20px;line-height:1.3;color:#d0021b;font-size:13px;font-weight:700;margin:8px 4px 0}
+  .hc-foot{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #eee;padding:10px 12px;gap:8px}
+  .hc-icons{display:flex;gap:12px;font-size:18px;color:#888}
+  .hc-icons button{background:none;border:0;font-size:18px;cursor:pointer;padding:0}
+  .hc-verify{background:var(--pink);color:#fff;border:0;border-radius:4px;padding:11px 20px;font:800 14px "Nunito";letter-spacing:.04em;cursor:pointer}
+  .hc-verify:disabled{opacity:.6}
+  .hc-msg.big{font-size:56px;text-align:center;min-height:64px;animation:cool .6s cubic-bezier(.2,1.6,.4,1) both}
+  @keyframes cool{from{transform:scale(.2) rotate(-20deg);opacity:0}to{transform:none;opacity:1}}
+  .shake{animation:shake .45s}
+  @keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+  .escape{display:block;width:100%;background:#fff6f9;border:0;border-top:1px solid #f5dbe3;color:var(--pink-deep);font:800 14px "Nunito";padding:13px;cursor:pointer}
+  .round{font-size:11px;color:#999;text-align:right;padding:0 12px 6px}
+
+  .confetti{position:fixed;top:-20px;z-index:60;font-size:22px;pointer-events:none;animation:fall linear forwards}
+
+  @media (min-width:768px){
+    .screen{max-width:500px}
+    .card{padding:40px 40px 34px;border-radius:32px}
+    h1{font-size:44px}
+    .eyebrow{font-size:28px}
+    .cup-wrap{transform:scale(1.15);margin:10px auto 14px}
+    .btn{font-size:18px;padding:17px 30px}
+    .hc{max-width:400px}
+    .done .big{font-size:76px}
+  }
+  @media (hover:hover){
+    .btn-no:hover{background:#fff6f9;border-color:var(--rose)}
+    .btn-submit:hover{transform:translateY(-2px)}
+    .tile:hover{filter:brightness(.97);outline:2px solid var(--rose);outline-offset:-2px}
+    .hc-verify:hover:not(:disabled){filter:brightness(1.05)}
+    .escape:hover{background:#ffe9f0}
+    .box:hover{border-color:var(--pink)}
+  }
+  @media (max-height:600px) and (orientation:landscape){
+    .garden{height:110px} main{padding-bottom:90px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ Background: morning garden ============ -->
+<div class="scene" aria-hidden="true">
+  <div class="sun"></div>
+  <div class="cloud c1"></div>
+  <div class="cloud c2"></div>
+  <div class="butterfly" style="top:30%;left:4%">🦋</div>
+  <div class="garden">
+    <svg viewBox="0 0 400 220" preserveAspectRatio="none" style="aspect-ratio:400/220">
+      <path d="M0 110 Q100 70 200 110 T400 110 V220 H0Z" fill="#cfe8c3"/>
+      <path d="M0 145 Q100 115 200 145 T400 145 V220 H0Z" fill="#a9d39e"/>
+      <!-- flowers -->
+      <g class="sway"><path d="M40 220 V150" stroke="#4f8f5a" stroke-width="3"/><ellipse cx="34" cy="175" rx="9" ry="4" fill="#7fb77e" transform="rotate(-30 34 175)"/><g transform="translate(40 146)"><circle r="7" fill="#ff8fb1" cx="0" cy="-8"/><circle r="7" fill="#ff8fb1" cx="8" cy="0"/><circle r="7" fill="#ff8fb1" cx="0" cy="8"/><circle r="7" fill="#ff8fb1" cx="-8" cy="0"/><circle r="5" fill="#ffd166"/></g></g>
+      <g class="sway d1"><path d="M95 220 V165" stroke="#4f8f5a" stroke-width="3"/><path d="M85 160 q10 -22 20 0 q-10 10 -20 0z" fill="#f06a95"/><path d="M88 160 q7 -14 14 0" fill="#ffb3c9"/></g>
+      <g class="sway d2"><path d="M150 220 V140" stroke="#4f8f5a" stroke-width="3"/><ellipse cx="157" cy="180" rx="10" ry="4" fill="#7fb77e" transform="rotate(30 157 180)"/><g transform="translate(150 136)"><circle r="8" fill="#ffc2d4" cx="0" cy="-9"/><circle r="8" fill="#ffc2d4" cx="9" cy="0"/><circle r="8" fill="#ffc2d4" cx="0" cy="9"/><circle r="8" fill="#ffc2d4" cx="-9" cy="0"/><circle r="6" fill="#ffb84d"/></g></g>
+      <g class="sway d3"><path d="M250 220 V160" stroke="#4f8f5a" stroke-width="3"/><path d="M240 155 q10 -22 20 0 q-10 10 -20 0z" fill="#d94a7a"/><path d="M243 155 q7 -14 14 0" fill="#ff8fb1"/></g>
+      <g class="sway d1"><path d="M305 220 V145" stroke="#4f8f5a" stroke-width="3"/><ellipse cx="298" cy="185" rx="10" ry="4" fill="#7fb77e" transform="rotate(-30 298 185)"/><g transform="translate(305 141)"><circle r="7" fill="#fff" cx="0" cy="-8"/><circle r="7" fill="#fff" cx="8" cy="0"/><circle r="7" fill="#fff" cx="0" cy="8"/><circle r="7" fill="#fff" cx="-8" cy="0"/><circle r="5" fill="#ffd166"/></g></g>
+      <g class="sway"><path d="M360 220 V158" stroke="#4f8f5a" stroke-width="3"/><path d="M350 153 q10 -22 20 0 q-10 10 -20 0z" fill="#f06a95"/><path d="M353 153 q7 -14 14 0" fill="#ffb3c9"/></g>
+      <g class="sway d2"><path d="M200 220 V180" stroke="#4f8f5a" stroke-width="2.5"/><g transform="translate(200 176)"><circle r="5" fill="#ff8fb1" cx="0" cy="-6"/><circle r="5" fill="#ff8fb1" cx="6" cy="0"/><circle r="5" fill="#ff8fb1" cx="0" cy="6"/><circle r="5" fill="#ff8fb1" cx="-6" cy="0"/><circle r="4" fill="#fff3c4"/></g></g>
+      <path d="M0 188 Q100 172 200 188 T400 188 V220 H0Z" fill="#8cc485"/>
+    </svg>
+  </div>
+</div>
+
+<main>
+  <!-- ============ 1. Invitation ============ -->
+  <section class="screen active" id="invite">
+    <div class="card">
+      <span class="corner tl">🌷</span>
+      <span class="corner br">🌸</span>
+
+      <div class="cup-wrap" aria-hidden="true">
+        <span class="steam s1"></span><span class="steam s2"></span><span class="steam s3"></span>
+        <svg viewBox="0 0 120 118" width="120" height="118">
+          <ellipse cx="58" cy="108" rx="48" ry="8" fill="#f6c9d6"/>
+          <path d="M18 46 h80 l-8 52 a10 10 0 0 1 -10 8 h-44 a10 10 0 0 1 -10 -8z" fill="#fff" stroke="#f3b4c8" stroke-width="3"/>
+          <path d="M97 56 q18 0 16 16 q-2 14 -20 14" fill="none" stroke="#f3b4c8" stroke-width="6" stroke-linecap="round"/>
+          <ellipse cx="58" cy="46" rx="40" ry="7" fill="#b07a5a"/>
+          <path d="M52 44 q6 -8 12 0 q-6 6 -12 0z" fill="#e8c4a8"/>
+          <g transform="translate(58 76)" fill="#f06a95"><circle r="5" cy="-7"/><circle r="5" cx="7" cy="-2"/><circle r="5" cx="4" cy="6"/><circle r="5" cx="-4" cy="6"/><circle r="5" cx="-7" cy="-2"/><circle r="3.5" fill="#ffd166"/></g>
+        </svg>
+      </div>
+
+      <p class="eyebrow">Good day, <span data-her></span> ☀️</p>
+      <h1>Breakfast tayo sa <em>Saturday 8AM</em></h1>
+
+      <div class="btns">
+        <button class="btn btn-yes" id="yesBtn">Yes ☕</button>
+        <button class="btn btn-no" id="noBtn">Not this time</button>
+      </div>
+
+      <div class="submit-wrap" id="submitWrap">
+        <p class="picked">You picked <b>Yes</b> ☀️</p>
+        <button class="btn btn-submit" id="submitBtn">Confirm 💌</button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ 2. Done ============ -->
+  <section class="screen done" id="done">
+    <div class="card">
+      <span class="corner tl">🌸</span>
+      <span class="corner br">🌼</span>
+      <div class="big">☕</div>
+      <h1>Yay! <em>See you</em> ☀️</h1>
+      <div class="summary" id="summary"></div>
+    </div>
+  </section>
+</main>
+
+<!-- Netlify Forms: Netlify reads this hidden form when you deploy, so the answer gets emailed to you -->
+<form name="coffee-answer" data-netlify="true" netlify-honeypot="bot-field" hidden>
+  <input name="answer">
+  <input name="no_attempts">
+  <input name="answered_at">
+  <input name="bot-field">
+</form>
+
+<!-- ============ Fake "Are you Julie?" check ============ -->
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Julie verification">
+  <div class="hc" id="hc"></div>
+</div>
+
+<script>
+/* =====================================================================
+   ✏️  EDIT THESE DETAILS
+   ===================================================================== */
+const CONFIG = {
+  herName:  "Julie",
+  day:      "Saturday",
+  time:     "8:00 AM",
+  // How many "Not this time" verification rounds before the check gives up.
+  // 0 = never-ending 😈
+  giveUpAfter: 0,
+};
+/* ===================================================================== */
+
+const $ = s => document.querySelector(s);
+document.querySelectorAll("[data-her]").forEach(e => e.textContent = CONFIG.herName);
+
+function show(id){
+  document.querySelectorAll(".screen").forEach(s => s.classList.toggle("active", s.id === id));
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+/* ---------- garden: repeat the flower strip across wide screens ---------- */
+const garden = document.querySelector(".garden"), strip = garden.querySelector("svg");
+function fillGarden(){
+  const need = Math.ceil(innerWidth / Math.max(1, strip.getBoundingClientRect().width)) + 2;
+  while (garden.children.length < need) garden.appendChild(strip.cloneNode(true));
+}
+fillGarden();
+addEventListener("resize", fillGarden);
+
+/* ---------- falling petals + butterflies ---------- */
+const scene = document.querySelector(".scene");
+function petal(){
+  const p = document.createElement("span");
+  p.className = "petal";
+  p.textContent = ["🌸","🌷","🌺","🌼","🍃"][Math.random()*5|0];
+  p.style.left = Math.random()*100 + "vw";
+  p.style.setProperty("--dx", (Math.random()*160-80) + "px");
+  p.style.animationDuration = (8 + Math.random()*6) + "s";
+  p.style.fontSize = (12 + Math.random()*12) + "px";
+  scene.appendChild(p);
+  setTimeout(() => p.remove(), 15000);
+}
+for (let i=0;i<5;i++) setTimeout(petal, i*700);
+setInterval(petal, 1400);
+const b2 = document.createElement("div");
+b2.className = "butterfly"; b2.textContent = "🦋";
+b2.style.cssText = "top:52%;left:60%;animation-duration:18s;animation-direction:reverse;font-size:18px";
+scene.appendChild(b2);
+
+/* ---------- YES flow: one tap, no typing ---------- */
+let noAttempts = 0, answered = false;
+
+// Step 1: tapping Yes just selects it and shows the Submit button
+function pickYes(){
+  $("#yesBtn").classList.add("picked");
+  $("#submitWrap").classList.add("show");
+  confetti(20);
+  setTimeout(() => $("#submitBtn").scrollIntoView({behavior:"smooth", block:"center"}), 150);
+}
+
+// Step 2: Submit sends the answer
+async function sayYes(){
+  if (answered) return;
+  answered = true;
+  const btn = $("#submitBtn");
+  btn.disabled = true; btn.textContent = "Confirming… 💌";
+
+  const [, texted] = await Promise.all([
+    sendAnswer({
+      answer: "YES ☀️",
+      no_attempts: String(noAttempts),
+      answered_at: new Date().toLocaleString("en-PH", {timeZone:"Asia/Manila"}),
+    }),
+    sendText(),
+  ]);
+
+  $("#summary").innerHTML =
+    `🗓️ <b>${esc(CONFIG.day)}</b> at <b>${esc(CONFIG.time)}</b><br>🍳 Breakfast` +
+    (texted ? `<br>📱 Check your phone, I just texted you the details!` : "");
+  show("done");
+  confetti(70);
+}
+$("#yesBtn").onclick = pickYes;
+$("#submitBtn").onclick = sayYes;
+
+// Netlify Forms: posts to the hidden <form name="coffee-answer">; Netlify emails it to you.
+async function sendAnswer(data){
+  try{
+    await fetch("/", {
+      method: "POST",
+      headers: {"Content-Type":"application/x-www-form-urlencoded"},
+      body: new URLSearchParams({"form-name":"coffee-answer", ...data}).toString(),
+    });
+  }catch(e){ console.warn("Could not send answer", e); }
+}
+
+// Semaphore SMS: netlify/functions/confirm.mjs texts Julie the confirmation + instructions.
+async function sendText(){
+  try{
+    const res = await fetch("/api/confirm", {method:"POST"});
+    return res.ok;
+  }catch(e){ console.warn("Could not send text", e); return false; }
+}
+
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+function confetti(n){
+  for (let i=0;i<n;i++){
+    const c = document.createElement("span");
+    c.className = "confetti";
+    c.textContent = ["🌸","☕","✨","🌷","🌼","🍳"][Math.random()*6|0];
+    c.style.left = Math.random()*100 + "vw";
+    c.style.setProperty("--dx", (Math.random()*200-100) + "px");
+    c.style.animationDuration = (2.5 + Math.random()*2.5) + "s";
+    c.style.animationDelay = (Math.random()*.6) + "s";
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 6000);
+  }
+}
+
+/* ---------- NO flow: the never-ending Julie check ---------- */
+const overlay = $("#overlay"), hc = $("#hc");
+let round = 0, progress = 0;
+
+const FAILS = [
+  "Verification failed. Please try again.",
+  "Hmm… the real Julie wouldn't pick those. 🤔",
+  "Our system is only 3% sure you're Julie. Try again.",
+  "Error 418: Breakfast cannot be declined.",
+  "Connection to breakfast.exe timed out. Try again.",
+  "Suspicious activity: clicking 'No'. Please re-verify.",
+  "Almost! (not really) Try again 🌷",
+  "The real Julie usually clicks Yes at this point. Retry.",
+];
+
+const GRID_CHALLENGES = [
+  { q:"Select all squares with a <b>coffee cup</b>", tiles:["☕","🌷","🍩","☕","🌸","🥐","🌼","☕","🍓"], answer:"cups" },
+  { q:"Select all squares with <b>traffic lights</b>", tiles:["🌸","🌷","🌼","🌺","🌻","🌹","🪻","💐","🌸"], answer:"none" },
+  { q:"Select all images of <b>reasons to say no</b>", tiles:["","","","","","","","",""], answer:"none" },
+  { q:"Select all squares of <b>someone hopeful</b>", tiles:["🥺","🥺","🥺","🥺","🥺","🥺","🥺","🥺","🥺"], answer:"all" },
+  { q:"Select all <b>flowers that want you to say yes</b>", tiles:["🌷","🌸","🌼","🌺","🌻","🌹","🪻","💐","🌷"], answer:"all" },
+  { q:"Select all squares that are <b>a perfect morning</b>", tiles:["☀️","☕","🌸","🥐","🦋","🌷","🎶","🍳","🌼"], answer:"all" },
+  { q:"Select all squares with <b>bicycles</b><br><small>(hint: there are none, that's the point)</small>", tiles:["🐝","🌼","🐞","🌸","🦋","🌷","🐌","🍃","🌺"], answer:"none" },
+];
+
+// Shown only when she solves a puzzle correctly (1 = coffee cups, 2 = type the word,
+// 3 = slider, 4 = traffic lights, 5 = type the word again). Then the next puzzle loads anyway.
+const NOTES = {
+  1: "✅ All cups found… but verification failed: Julie is too cute to decline.",
+  2: "Okay? Verification not enough.",
+  4: "😎",
+  5: "😎 Cool. Still not enough.",
+};
+const DEFAULT_NOTE = "✅ Correct! Julie needs further verification…";
+
+function openCheck(){
+  round = 0; progress = 0;
+  overlay.classList.add("show");
+  renderCheckbox();
+}
+function closeCheck(){ stopRunawayCup(); overlay.classList.remove("show"); }
+
+$("#noBtn").onclick = openCheck;
+
+function escapeBtn(){
+  return `<button class="escape" id="escBtn">Yes!</button>`;
+}
+function bindEscape(){
+  $("#escBtn").onclick = () => { closeCheck(); pickYes(); };
+}
+
+function renderCheckbox(){
+  hc.innerHTML = `
+    <div style="padding:14px 16px 0;font-size:14px;color:#555">Before you decline, please confirm you're ${esc(CONFIG.herName)}.</div>
+    <div class="hc-check">
+      <div class="hc-left"><div class="box" id="box" role="checkbox" aria-checked="false" tabindex="0"></div>I am ${esc(CONFIG.herName)}</div>
+      <div class="hc-brand"><span class="logo">🌸</span>JulieCheck<br>Privacy · Terms</div>
+    </div>
+    ${escapeBtn()}`;
+  bindEscape();
+  const box = $("#box");
+  const go = () => {
+    box.classList.add("spin");
+    setTimeout(nextChallenge, 1300);
+  };
+  box.onclick = go;
+  box.onkeydown = e => { if (e.key === " " || e.key === "Enter"){ e.preventDefault(); go(); } };
+}
+
+function shell(head, body, opts={}){
+  stopRunawayCup();
+  hc.innerHTML = `
+    <div class="hc-head"><small>${opts.small || "Julie verification"}</small><strong>${head}</strong></div>
+    <div class="hc-body">
+      ${body}
+      <div class="meter">Verifying you're really Julie… <span id="pct">${progress}%</span>
+        <div class="meter-bar"><i id="bar" style="width:${progress}%"></i></div></div>
+      <div class="hc-msg" id="msg"></div>
+    </div>
+    <div class="round">Attempt #${round}</div>
+    <div class="hc-foot">
+      <div class="hc-icons"><button title="New challenge" id="reload">🔄</button><button title="Audio">🎧</button><button title="Help" id="help">ℹ️</button></div>
+      <button class="hc-verify" id="verify">${opts.verify || "VERIFY"}</button>
+    </div>
+    ${escapeBtn()}`;
+  bindEscape();
+  $("#reload").onclick = () => fail("New challenge loaded. Old one was too easy.");
+  $("#help").onclick = () => $("#msg").textContent = "Tip: the Yes! button works perfectly ☀️";
+}
+
+function nextChallenge(){
+  round++;
+  if (CONFIG.giveUpAfter && round > CONFIG.giveUpAfter) return giveUp();
+  const kind = round % 3; // rotate challenge types
+  if (kind === 1) gridChallenge(GRID_CHALLENGES[(round/3|0) % GRID_CHALLENGES.length]);
+  else if (kind === 2) wordChallenge();
+  else moodChallenge();
+}
+
+function gridChallenge(c){
+  const tiles = [...c.tiles].sort(() => Math.random()-.5);
+  shell(c.q, `<div class="grid">${tiles.map(t => `<button class="tile">${t}</button>`).join("")}</div>`);
+  hc.querySelectorAll(".tile").forEach(t => t.onclick = () => {
+    t.classList.toggle("sel");
+    // the first time she picks a coffee cup, the other cups start running away
+    if (t.textContent === "☕" && !cupTimer) startRunawayCups();
+  });
+  $("#verify").onclick = () => verifying(() => {
+    const all = [...hc.querySelectorAll(".tile")];
+    const picked = all.filter(t => t.classList.contains("sel")).length;
+    const solved =
+      c.answer === "cups" ? all.every(t => (t.textContent === "☕") === t.classList.contains("sel")) :
+      c.answer === "none" ? picked === 0 :
+      c.answer === "all"  ? picked === all.length : false;
+    if (solved) pass(NOTES[round] || DEFAULT_NOTE);
+    else fail();
+  });
+}
+
+// Every 2 seconds, each cup she hasn't selected hops to a free tile.
+// A cup she selects stays fixed where it is.
+let cupTimer = null;
+function stopRunawayCup(){ clearInterval(cupTimer); cupTimer = null; }
+function startRunawayCups(){
+  stopRunawayCup();
+  const tiles = [...hc.querySelectorAll(".tile")];
+  const isCup = t => t.textContent === "☕";
+  const isSel = t => t.classList.contains("sel");
+  const hop = () => {
+    if (!tiles[0].isConnected) return stopRunawayCup();
+    tiles.filter(t => isCup(t) && !isSel(t)).forEach(from => {
+      const spots = tiles.filter(t => !isCup(t) && !isSel(t));
+      if (!spots.length) return;
+      const to = spots[Math.random()*spots.length|0];
+      [from.textContent, to.textContent] = [to.textContent, from.textContent];
+      to.classList.remove("hop"); void to.offsetWidth; to.classList.add("hop");
+    });
+  };
+  cupTimer = setInterval(hop, 2000);
+}
+
+function wordChallenge(){
+  const word = "Yes".split("").map((ch,i) =>
+    `<span style="transform:rotate(${[-14,10,-8][i]}deg) translateY(${[-4,5,-2][i]}px)">${ch}</span>`).join("");
+  shell("Type a word you see below",
+    `<div class="captcha-word">${word}<span class="tiny-no">No</span></div>
+     <input class="hc-input" id="word" placeholder="Type here" autocomplete="off" autocapitalize="off">`);
+  $("#word").onkeydown = e => { if (e.key === "Enter") $("#verify").click(); };
+  $("#verify").onclick = () => {
+    const v = $("#word").value.trim().toLowerCase();
+    if (v === "yes") verifying(() => pass(NOTES[round] || DEFAULT_NOTE));
+    else if (v === "no") verifying(() => fail("Hmm, that word was too small to count. Try again."));
+    else verifying(() => fail("Incorrect. Hint: it's a 3-letter word that starts with Y."));
+  };
+}
+
+// Drag the slider all the way: the smiley gets sadder the further she goes
+const MOODS = ["😊","🙂","😐","😕","🙁","😟","🥺"];
+function moodChallenge(){
+  shell("Drag the slider all the way to confirm you're Julie",
+    `<div class="rot-wrap"><div class="rot-ring" id="ring">
+       <div class="rot-img" id="face">${MOODS[0]}</div>
+     </div></div>
+     <div class="slider-track" id="track">
+       <div class="slider-fill" id="fill"></div>
+       <div class="slider-label">drag →</div>
+       <div class="slider-knob" id="knob">🌸</div>
+     </div>`, {verify:"SKIP"});
+  const track = $("#track"), knob = $("#knob"), fill = $("#fill"), face = $("#face"), ring = $("#ring");
+  let dragging = false, done = false, max = 0, x = 0;
+  const setMood = f => {
+    const mood = MOODS[Math.min(MOODS.length-1, Math.floor(f * MOODS.length))];
+    if (face.textContent !== mood){ face.textContent = mood; face.classList.remove("wobble"); void face.offsetWidth; face.classList.add("wobble"); }
+  };
+  const start = e => { if (done) return; dragging = true; max = track.clientWidth - knob.clientWidth - 8; knob.classList.remove("snap"); fill.classList.remove("snap"); knob.setPointerCapture(e.pointerId); };
+  const move = e => {
+    if (!dragging) return;
+    const r = track.getBoundingClientRect();
+    x = Math.max(0, Math.min(max, e.clientX - r.left - knob.clientWidth/2));
+    knob.style.left = (4 + x) + "px";
+    fill.style.width = (x + knob.clientWidth) + "px";
+    setMood(x / max);
+  };
+  const end = () => {
+    if (!dragging) return; dragging = false;
+    if (x >= max * .97){
+      done = true; knob.textContent = "✓"; ring.classList.add("solved");
+      verifying(() => pass(NOTES[round] || DEFAULT_NOTE));
+    } else {
+      knob.classList.add("snap"); fill.classList.add("snap");
+      knob.style.left = "4px"; fill.style.width = "0"; x = 0;
+      setMood(0);
+      $("#msg").style.color = "#d0021b";
+      $("#msg").textContent = "Please drag all the way.";
+    }
+  };
+  knob.addEventListener("pointerdown", start);
+  knob.addEventListener("pointermove", move);
+  knob.addEventListener("pointerup", end);
+  knob.addEventListener("pointercancel", end);
+  $("#verify").onclick = () => fail("Skipping is not allowed. Nice try 🌷");
+}
+
+function verifying(cb){
+  const v = $("#verify");
+  v.disabled = true; v.textContent = "CHECKING…";
+  setTimeout(cb, 900);
+}
+
+// A "correct" answer still isn't enough: bump the bar and move on to the next puzzle
+function pass(text){
+  stopRunawayCup();
+  progress = Math.min(95, progress + 25);
+  const bar = $("#bar"), pct = $("#pct"), msg = $("#msg");
+  if (bar){ bar.style.width = progress + "%"; pct.textContent = progress + "%"; }
+  if (msg){
+    msg.style.color = "#2e9a5a"; msg.textContent = text;
+    msg.classList.toggle("big", !/[a-z]/i.test(text)); // emoji-only note shows big
+  }
+  setTimeout(nextChallenge, 1800);
+}
+
+function fail(text){
+  noAttempts++;
+  // progress creeps up… then resets just before the finish
+  progress = progress >= 90 ? 7 : Math.min(99, progress + 20 + (Math.random()*15|0));
+  const bar = $("#bar"), pct = $("#pct"), msg = $("#msg");
+  if (bar){ bar.style.width = progress + "%"; pct.textContent = progress + "%"; }
+  if (msg){ msg.style.color = "#d0021b"; msg.textContent = text || FAILS[(Math.random()*FAILS.length)|0]; }
+  hc.classList.remove("shake"); void hc.offsetWidth; hc.classList.add("shake");
+  setTimeout(nextChallenge, 1500);
+}
+
+function giveUp(){
+  hc.innerHTML = `
+    <div class="hc-head"><small>JulieCheck</small><strong>Okay okay… you win 😅</strong></div>
+    <div class="hc-body" style="text-align:center;padding:22px 16px">
+      <div style="font-size:46px">🤖💐</div>
+      <p style="color:#555;line-height:1.5">No hard feelings, ${esc(CONFIG.herName)}. Thanks for being a good sport 🌷</p>
+    </div>
+    ${escapeBtn().replace("Yes!","Wait… actually, yes ☕")}`;
+  bindEscape();
+}
+</script>
+</body>
+</html>
