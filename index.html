@@ -552,23 +552,8 @@ function loadChallenge(){
   else moodChallenge();
 }
 
-// 3×3 grid helpers: two tiles "touch" if they share a side or a corner
-const rc = i => [i / 3 | 0, i % 3];
-const touching = (a, b) => { const [r1, c1] = rc(a), [r2, c2] = rc(b); return a !== b && Math.abs(r1 - r2) <= 1 && Math.abs(c1 - c2) <= 1; };
-const sideBySide = (a, b) => { const [r1, c1] = rc(a), [r2, c2] = rc(b); return Math.abs(r1 - r2) + Math.abs(c1 - c2) === 1; };
-const shuffle = a => a.sort(() => Math.random() - .5);
-
-// Coffee cups start in the corners so none of them sit next to each other
-function layoutTiles(list){
-  const cups = list.filter(t => t === "☕");
-  if (!cups.length) return shuffle([...list]);
-  const others = shuffle(list.filter(t => t !== "☕"));
-  const corners = shuffle([0, 2, 6, 8]).slice(0, cups.length);
-  return Array.from({ length: list.length }, (_, i) => corners.includes(i) ? "☕" : others.pop());
-}
-
 function gridChallenge(c){
-  const tiles = layoutTiles(c.tiles);
+  const tiles = [...c.tiles].sort(() => Math.random()-.5);
   shell(c.q, `<div class="grid">${tiles.map(t => `<button class="tile">${t}</button>`).join("")}</div>`);
   hc.querySelectorAll(".tile").forEach(t => t.onclick = () => {
     t.classList.toggle("sel");
@@ -621,31 +606,14 @@ function startRunawayCups(){
   const tiles = [...hc.querySelectorAll(".tile")];
   const isCup = t => t.textContent === "☕";
   const isSel = t => t.classList.contains("sel");
-  const idx = test => tiles.map((t, i) => test(t) ? i : -1).filter(i => i >= 0);
-  // every way to pick k tiles out of a list
-  const pick = (list, k) => k === 0 ? [[]] : list.flatMap((x, i) => pick(list.slice(i + 1), k - 1).map(rest => [x, ...rest]));
   const hop = () => {
     if (!tiles[0].isConnected) return stopRunawayCup();
-    const fixed = idx(t => isCup(t) && isSel(t));
-    const moving = idx(t => isCup(t) && !isSel(t));
-    if (!moving.length) return;
-    const open = idx(t => !isSel(t));
-    // new spots for all moving cups at once: at least one cup changes place, and no two
-    // cups touch (not even at a corner); if that's impossible, at least none side by side
-    const layouts = pick(open, moving.length).filter(set => set.some(i => !moving.includes(i)));
-    const apart = near => layouts.filter(set => {
-      const all = [...fixed, ...set];
-      return all.every((a, i) => all.every((b, j) => i >= j || !near(a, b)));
-    });
-    const options = [touching, sideBySide].map(apart).find(l => l.length) || layouts;
-    if (!options.length) return;
-    const target = options[Math.random() * options.length | 0];
-    const leaving = moving.filter(i => !target.includes(i));
-    const arriving = target.filter(i => !moving.includes(i));
-    arriving.forEach((to, n) => {
-      const from = leaving[n];
-      [tiles[from].textContent, tiles[to].textContent] = [tiles[to].textContent, tiles[from].textContent];
-      tiles[to].classList.remove("hop"); void tiles[to].offsetWidth; tiles[to].classList.add("hop");
+    tiles.filter(t => isCup(t) && !isSel(t)).forEach(from => {
+      const spots = tiles.filter(t => !isCup(t) && !isSel(t));
+      if (!spots.length) return;
+      const to = spots[Math.random()*spots.length|0];
+      [from.textContent, to.textContent] = [to.textContent, from.textContent];
+      to.classList.remove("hop"); void to.offsetWidth; to.classList.add("hop");
     });
   };
   cupTimer = setInterval(hop, 800);
