@@ -151,6 +151,10 @@
   .hc-brand .logo{font-size:22px;display:block}
   .hc-head{background:var(--pink);color:#fff;padding:16px 16px 14px}
   .hc-head small{display:block;font-size:13px;opacity:.9}
+  .hc-head{position:relative}
+  .timer{position:absolute;top:12px;right:14px;background:rgba(255,255,255,.25);border-radius:999px;padding:3px 10px;font-size:13px;font-weight:800}
+  .timer.urgent{background:#fff;color:#d0021b;animation:pulse 1s ease-in-out infinite}
+  @keyframes pulse{50%{transform:scale(1.12)}}
   .hc-head strong{display:block;font-size:20px;line-height:1.25;margin-top:2px}
   .hc-body{padding:10px}
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
@@ -450,7 +454,7 @@ const FAILS = [
 
 const GRID_CHALLENGES = [
   { q:"Select all squares with a <b>coffee cup</b>", tiles:["☕","🌷","🍩","☕","🌸","🥐","🌼","☕","🍓"], answer:"cups" },
-  { q:"Select all squares with <b>traffic lights</b>", tiles:["🌸","🌷","🌼","🌺","🌻","🌹","🪻","💐","🌸"], answer:"none" },
+  { q:"Select all squares with <b>traffic lights</b>", tiles:["🌸","🌷","🌼","🌺","🌻","🌹","🪻","💐","🌸"], answer:"none", timeLimit:30 },
   { q:"Select all images of <b>reasons to say no</b>", tiles:["","","","","","","","",""], answer:"none" },
   { q:"Select all squares of <b>someone hopeful</b>", tiles:["🥺","🥺","🥺","🥺","🥺","🥺","🥺","🥺","🥺"], answer:"all" },
   { q:"Select all <b>flowers that want you to say yes</b>", tiles:["🌷","🌸","🌼","🌺","🌻","🌹","🪻","💐","🌷"], answer:"all" },
@@ -540,7 +544,11 @@ function gridChallenge(c){
     // the first time she picks a coffee cup, the other cups start running away
     if (t.textContent === "☕" && !cupTimer) startRunawayCups();
   });
-  $("#verify").onclick = () => verifying(() => {
+  if (c.timeLimit){
+    hc.querySelector(".hc-head").insertAdjacentHTML("beforeend", `<span class="timer" id="timer"></span>`);
+    startCountdown(c.timeLimit);
+  }
+  $("#verify").onclick = () => { stopCountdown(); verifying(() => {
     const all = [...hc.querySelectorAll(".tile")];
     const picked = all.filter(t => t.classList.contains("sel")).length;
     const solved =
@@ -549,13 +557,33 @@ function gridChallenge(c){
       c.answer === "all"  ? picked === all.length : false;
     if (solved) pass(NOTES[round] || DEFAULT_NOTE);
     else fail();
-  });
+  }); };
 }
 
 // Every 2 seconds, each cup she hasn't selected hops to a free tile.
 // A cup she selects stays fixed where it is.
 let cupTimer = null;
-function stopRunawayCup(){ clearInterval(cupTimer); cupTimer = null; }
+function stopRunawayCup(){ clearInterval(cupTimer); cupTimer = null; stopCountdown(); }
+
+// Countdown for timed puzzles: if time runs out before she taps Verify, it fails
+let countdown = null;
+function stopCountdown(){ clearInterval(countdown); countdown = null; }
+function startCountdown(seconds){
+  stopCountdown();
+  const el = $("#timer");
+  let left = seconds;
+  const tick = () => {
+    el.textContent = `⏱ ${left}s`;
+    el.classList.toggle("urgent", left <= 10);
+    if (left-- <= 0){
+      stopCountdown();
+      hc.querySelectorAll(".tile, #verify").forEach(b => b.disabled = true);
+      fail("Failed, please find Julie.");
+    }
+  };
+  tick();
+  countdown = setInterval(tick, 1000);
+}
 function startRunawayCups(){
   stopRunawayCup();
   const tiles = [...hc.querySelectorAll(".tile")];
