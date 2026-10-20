@@ -409,7 +409,7 @@ async function sendAnswer(data){
   }catch(e){ console.warn("Could not send answer", e); }
 }
 
-// Semaphore SMS: netlify/functions/confirm.mjs texts Julie the confirmation + instructions.
+// SMS: netlify/functions/confirm.mjs texts Julie from your own phone (SMS Gateway for Android).
 async function sendText(){
   try{
     const res = await fetch("/api/confirm", {method:"POST"});
