@@ -204,9 +204,15 @@
   .yes-only-btn{width:100%;font-size:22px;padding:20px}
   .back-link{margin-top:16px;background:none;border:0;color:var(--ink-soft);font:700 14px "Nunito",sans-serif;text-decoration:underline;cursor:pointer}
   .hc.bare{background:none;box-shadow:none;overflow:visible;max-width:340px}
+  .karaoke{min-height:110px;margin:0 4px 22px;text-align:center;display:flex;flex-direction:column;justify-content:flex-end}
+  .k-line{font:800 clamp(20px,5.6vw,26px)/1.3 "Nunito",sans-serif;
+    background:linear-gradient(90deg,#ffd166 50%,#fff 50%);background-size:200% 100%;background-position:100% 0;
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 2px 6px rgba(74,43,54,.55));animation:sing var(--d) linear forwards, lyricIn .4s ease both}
+  .k-next{margin-top:10px;font:700 15px/1.3 "Nunito",sans-serif;color:rgba(255,255,255,.85);filter:drop-shadow(0 1px 4px rgba(74,43,54,.6))}
+  @keyframes sing{to{background-position:0 0}}
+  @keyframes lyricIn{from{opacity:0;transform:translateY(10px)}}
   .hc.bare .yes-only-btn{font-size:26px;padding:24px;animation:pop .6s cubic-bezier(.2,1.4,.4,1) both}
-  .mute-btn{position:fixed;right:16px;bottom:16px;z-index:70;width:46px;height:46px;border-radius:50%;border:0;
-    background:#fff;box-shadow:0 6px 16px rgba(0,0,0,.18);font-size:20px;cursor:pointer}
   .shake{animation:shake .45s}
   @keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
   .escape{display:block;width:100%;background:#fff6f9;border:0;border-top:1px solid #f5dbe3;color:var(--pink-deep);font:800 14px "Nunito";padding:13px;cursor:pointer}
@@ -321,8 +327,6 @@
 </form>
 
 <!-- ============ Fake "Are you Julie?" check ============ -->
-<audio id="bgm" preload="auto" loop playsinline></audio>
-<button class="mute-btn" id="muteBtn" hidden aria-label="Mute music">🎵</button>
 
 <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Julie verification">
   <div class="hc" id="hc"></div>
@@ -339,10 +343,9 @@ const CONFIG = {
   // How many "Not this time" verification rounds before the check gives up.
   // 0 = never-ending 😈
   giveUpAfter: 0,
-  // Song that starts on the final Yes page. Add your own audio file to the folder
-  // with this exact name. If the file isn't there, the card simply stays silent.
-  music: "music.mp3",
-  musicStart: 0,        // seconds into the song to start from, e.g. 95 = 1:35
+  // Lyrics shown videoke-style on the final Yes page, one line per row.
+  // Put your own lyrics in this file. If it's empty or missing, nothing is shown.
+  lyricsFile: "lyrics.txt",
 };
 /* ===================================================================== */
 
@@ -484,9 +487,9 @@ function openCheck(){
   overlay.classList.add("show");
   renderCheckbox();
 }
-function closeCheck(){ stopRunawayCup(); overlay.classList.remove("show"); hc.classList.remove("bare"); }
+function closeCheck(){ stopRunawayCup(); stopLyrics(); overlay.classList.remove("show"); hc.classList.remove("bare"); }
 
-$("#noBtn").onclick = () => { unlockMusic(); openCheck(); };
+$("#noBtn").onclick = openCheck;
 
 function escapeBtn(){
   return `<button class="escape" id="escBtn">Yes!</button>`;
@@ -729,10 +732,11 @@ function showYesOnly({ back }){
       </div>`;
     $("#goBack").onclick = loadChallenge;
   } else {
-    // after the last puzzle: nothing but the Yes button, with the music
+    // after the last puzzle: nothing but the Yes button, with the lyrics above it
     hc.classList.add("bare");
-    hc.innerHTML = `<button class="btn btn-yes yes-only-btn" id="onlyYes">Yes ☕</button>`;
-    playMusic();
+    hc.innerHTML = `<div class="karaoke" id="karaoke"></div>
+      <button class="btn btn-yes yes-only-btn" id="onlyYes">Yes ☕</button>`;
+    startLyrics();
   }
   $("#onlyYes").onclick = () => {
     closeCheck();
@@ -741,31 +745,29 @@ function showYesOnly({ back }){
   };
 }
 
-// Background song: put your own audio file next to index.html (see CONFIG.music)
-const bgm = $("#bgm");
-// Phones only allow sound that starts from a tap, so "unlock" the player silently
-// on her first tap; the song can then start later on its own.
-function unlockMusic(){
-  if (!CONFIG.music || bgm.src) return;
-  bgm.src = CONFIG.music;
-  bgm.muted = true;
-  bgm.play().then(() => { bgm.pause(); bgm.muted = false; }).catch(() => { bgm.muted = false; });
+// Videoke-style lyrics: each line fills in from left to right, then the next one comes up
+let lyricTimer = null;
+function stopLyrics(){ clearTimeout(lyricTimer); lyricTimer = null; }
+async function startLyrics(){
+  stopLyrics();
+  const box = $("#karaoke");
+  let lines = [];
+  try {
+    const res = await fetch(CONFIG.lyricsFile, { cache: "no-store" });
+    if (res.ok) lines = (await res.text()).split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith("#"));
+  } catch (e) {}
+  if (!lines.length || !box?.isConnected) return;
+  let i = 0;
+  const show = () => {
+    if (!box.isConnected) return stopLyrics();
+    const line = lines[i % lines.length], next = lines[(i + 1) % lines.length];
+    const secs = Math.max(2.6, line.length * 0.11);
+    box.innerHTML = `<div class="k-line" style="--d:${secs}s">${esc(line)}</div><div class="k-next">${esc(next)}</div>`;
+    i++;
+    lyricTimer = setTimeout(show, secs * 1000 + 500);
+  };
+  show();
 }
-function playMusic(){
-  if (!CONFIG.music) return;
-  if (!bgm.src) bgm.src = CONFIG.music;
-  bgm.muted = false;
-  bgm.currentTime = CONFIG.musicStart || 0;
-  bgm.volume = 0;
-  bgm.play().then(() => {
-    $("#muteBtn").hidden = false;
-    const fade = setInterval(() => { bgm.volume = Math.min(1, bgm.volume + .05); if (bgm.volume >= 1) clearInterval(fade); }, 100);
-  }).catch(() => {});          // file missing or blocked: just stay silent
-}
-$("#muteBtn").onclick = () => {
-  bgm.muted = !bgm.muted;
-  $("#muteBtn").textContent = bgm.muted ? "🔇" : "🎵";
-};
 
 function fail(text, emoji){
   noAttempts++;
