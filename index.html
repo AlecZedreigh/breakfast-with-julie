@@ -160,7 +160,7 @@
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
   .tile{aspect-ratio:1;border:0;background:#fdeff3;font-size:clamp(30px,10vw,42px);cursor:pointer;position:relative;transition:transform .15s;border-radius:2px}
   .tile.sel{transform:scale(.86)}
-  .tile.hop{animation:hop .4s ease}
+  .tile.hop{animation:hop .18s ease}
   @keyframes hop{0%{transform:scale(.6) translateY(8px)}60%{transform:scale(1.12) translateY(-4px)}100%{transform:none}}
   .tile.sel::after{content:"✓";position:absolute;top:4px;left:4px;width:20px;height:20px;border-radius:50%;background:#4a90e2;color:#fff;font-size:12px;display:grid;place-items:center;font-weight:800}
   .captcha-word{font-family:"Caveat",cursive;font-size:72px;text-align:center;letter-spacing:8px;padding:20px 0;font-weight:700;background:repeating-linear-gradient(-30deg,#fdeff3 0 6px,#fff 6px 12px);color:var(--pink-deep);user-select:none}
@@ -197,6 +197,7 @@
   .hc-verify:disabled{opacity:.6}
   .hc-msg.big{font-size:56px;text-align:center;min-height:64px;animation:cool .6s cubic-bezier(.2,1.6,.4,1) both}
   @keyframes cool{from{transform:scale(.2) rotate(-20deg);opacity:0}to{transform:none;opacity:1}}
+  .fail-emoji{display:block;font-size:56px;line-height:1.1;text-align:center;margin-bottom:4px;animation:cool .6s cubic-bezier(.2,1.6,.4,1) both}
   .shake{animation:shake .45s}
   @keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
   .escape{display:block;width:100%;background:#fff6f9;border:0;border-top:1px solid #f5dbe3;color:var(--pink-deep);font:800 14px "Nunito";padding:13px;cursor:pointer}
@@ -441,20 +442,10 @@ function confetti(n){
 const overlay = $("#overlay"), hc = $("#hc");
 let round = 0, progress = 0;
 
-const FAILS = [
-  "Verification failed. Please try again.",
-  "Hmm… the real Julie wouldn't pick those. 🤔",
-  "Our system is only 3% sure you're Julie. Try again.",
-  "Error 418: Breakfast cannot be declined.",
-  "Connection to breakfast.exe timed out. Try again.",
-  "Suspicious activity: clicking 'No'. Please re-verify.",
-  "Almost! (not really) Try again 🌷",
-  "The real Julie usually clicks Yes at this point. Retry.",
-];
-
 const GRID_CHALLENGES = [
   { q:"Select all squares with a <b>coffee cup</b>", tiles:["☕","🌷","🍩","☕","🌸","🥐","🌼","☕","🍓"], answer:"cups" },
-  { q:"Select all squares with <b>traffic lights</b>", tiles:["🌸","🌷","🌼","🌺","🌻","🌹","🪻","💐","🌸"], answer:"none", timeLimit:30 },
+  { q:"Select all squares with <b>traffic lights</b>", tiles:["🌸","🌷","🌼","🌺","🌻","🌹","🪻","💐","🌸"], answer:"never", timeLimit:15,
+    failText:"Where is Julie?", failEmoji:"😎", timeoutText:"Failed, please find Julie." },
   { q:"Select all images of <b>reasons to say no</b>", tiles:["","","","","","","","",""], answer:"none" },
   { q:"Select all squares of <b>someone hopeful</b>", tiles:["🥺","🥺","🥺","🥺","🥺","🥺","🥺","🥺","🥺"], answer:"all" },
   { q:"Select all <b>flowers that want you to say yes</b>", tiles:["🌷","🌸","🌼","🌺","🌻","🌹","🪻","💐","🌷"], answer:"all" },
@@ -465,10 +456,9 @@ const GRID_CHALLENGES = [
 // Shown only when she solves a puzzle correctly (1 = coffee cups, 2 = type the word,
 // 3 = slider, 4 = traffic lights, 5 = type the word again). Then the next puzzle loads anyway.
 const NOTES = {
-  1: "✅ All cups found… but verification failed: Julie is too cute to decline.",
+  1: "✅ Needs further verification. Julie is too cute to decline.",
   2: "Okay? Verification not enough.",
-  4: "😎",
-  5: "😎 Cool. Still not enough.",
+  3: "Wait! Haha 😆",
 };
 const DEFAULT_NOTE = "✅ Correct! Julie needs further verification…";
 
@@ -516,20 +506,26 @@ function shell(head, body, opts={}){
         <div class="meter-bar"><i id="bar" style="width:${progress}%"></i></div></div>
       <div class="hc-msg" id="msg"></div>
     </div>
-    <div class="round">Attempt #${round}</div>
+    <div class="round">Attempt #${tries}</div>
     <div class="hc-foot">
       <div class="hc-icons"><button title="New challenge" id="reload">🔄</button><button title="Audio">🎧</button><button title="Help" id="help">ℹ️</button></div>
       <button class="hc-verify" id="verify">${opts.verify || "VERIFY"}</button>
     </div>
     ${escapeBtn()}`;
   bindEscape();
-  $("#reload").onclick = () => fail("New challenge loaded. Old one was too easy.");
+  $("#reload").onclick = () => fail("Reloaded.");
   $("#help").onclick = () => $("#msg").textContent = "Tip: the Yes! button works perfectly ☀️";
 }
 
+// Solving a puzzle moves on to the next one; failing it reloads the same puzzle.
+let tries = 0;
 function nextChallenge(){
   round++;
   if (CONFIG.giveUpAfter && round > CONFIG.giveUpAfter) return giveUp();
+  loadChallenge();
+}
+function loadChallenge(){
+  tries++;
   const kind = round % 3; // rotate challenge types
   if (kind === 1) gridChallenge(GRID_CHALLENGES[(round/3|0) % GRID_CHALLENGES.length]);
   else if (kind === 2) wordChallenge();
@@ -546,7 +542,7 @@ function gridChallenge(c){
   });
   if (c.timeLimit){
     hc.querySelector(".hc-head").insertAdjacentHTML("beforeend", `<span class="timer" id="timer"></span>`);
-    startCountdown(c.timeLimit);
+    startCountdown(c.timeLimit, c.timeoutText, c.failEmoji);
   }
   $("#verify").onclick = () => { stopCountdown(); verifying(() => {
     const all = [...hc.querySelectorAll(".tile")];
@@ -556,11 +552,11 @@ function gridChallenge(c){
       c.answer === "none" ? picked === 0 :
       c.answer === "all"  ? picked === all.length : false;
     if (solved) pass(NOTES[round] || DEFAULT_NOTE);
-    else fail();
+    else fail(c.failText, c.failEmoji);
   }); };
 }
 
-// Every 2 seconds, each cup she hasn't selected hops to a free tile.
+// Every 0.2 seconds, each cup she hasn't selected hops to a free tile.
 // A cup she selects stays fixed where it is.
 let cupTimer = null;
 function stopRunawayCup(){ clearInterval(cupTimer); cupTimer = null; stopCountdown(); }
@@ -568,7 +564,7 @@ function stopRunawayCup(){ clearInterval(cupTimer); cupTimer = null; stopCountdo
 // Countdown for timed puzzles: if time runs out before she taps Verify, it fails
 let countdown = null;
 function stopCountdown(){ clearInterval(countdown); countdown = null; }
-function startCountdown(seconds){
+function startCountdown(seconds, timeoutText, emoji){
   stopCountdown();
   const el = $("#timer");
   let left = seconds;
@@ -578,7 +574,7 @@ function startCountdown(seconds){
     if (left-- <= 0){
       stopCountdown();
       hc.querySelectorAll(".tile, #verify").forEach(b => b.disabled = true);
-      fail("Failed, please find Julie.");
+      fail(timeoutText, emoji);
     }
   };
   tick();
@@ -599,7 +595,7 @@ function startRunawayCups(){
       to.classList.remove("hop"); void to.offsetWidth; to.classList.add("hop");
     });
   };
-  cupTimer = setInterval(hop, 2000);
+  cupTimer = setInterval(hop, 200);
 }
 
 function wordChallenge(){
@@ -612,8 +608,8 @@ function wordChallenge(){
   $("#verify").onclick = () => {
     const v = $("#word").value.trim().toLowerCase();
     if (v === "yes") verifying(() => pass(NOTES[round] || DEFAULT_NOTE));
-    else if (v === "no") verifying(() => fail("Hmm, that word was too small to count. Try again."));
-    else verifying(() => fail("Incorrect. Hint: it's a 3-letter word that starts with Y."));
+    else if (v === "no") verifying(() => fail("Hmm, that word was too small to count."));
+    else verifying(() => fail("Hint: it's a 3-letter word that starts with Y."));
   };
 }
 
@@ -661,7 +657,7 @@ function moodChallenge(){
   knob.addEventListener("pointermove", move);
   knob.addEventListener("pointerup", end);
   knob.addEventListener("pointercancel", end);
-  $("#verify").onclick = () => fail("Skipping is not allowed. Nice try 🌷");
+  $("#verify").onclick = () => fail("Skipping is not allowed.");
 }
 
 function verifying(cb){
@@ -683,15 +679,21 @@ function pass(text){
   setTimeout(nextChallenge, 1800);
 }
 
-function fail(text){
+function fail(text, emoji){
   noAttempts++;
+  stopRunawayCup();
   // progress creeps up… then resets just before the finish
   progress = progress >= 90 ? 7 : Math.min(99, progress + 20 + (Math.random()*15|0));
   const bar = $("#bar"), pct = $("#pct"), msg = $("#msg");
   if (bar){ bar.style.width = progress + "%"; pct.textContent = progress + "%"; }
-  if (msg){ msg.style.color = "#d0021b"; msg.textContent = text || FAILS[(Math.random()*FAILS.length)|0]; }
+  if (msg){
+    msg.classList.remove("big");
+    msg.style.color = "#d0021b";
+    msg.innerHTML = (emoji ? `<span class="fail-emoji">${emoji}</span>` : "") +
+      (text ? esc(text) + " " : "") + "Try again.";
+  }
   hc.classList.remove("shake"); void hc.offsetWidth; hc.classList.add("shake");
-  setTimeout(nextChallenge, 1500);
+  setTimeout(loadChallenge, emoji ? 2200 : 1600);
 }
 
 function giveUp(){
