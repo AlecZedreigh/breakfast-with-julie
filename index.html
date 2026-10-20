@@ -563,7 +563,7 @@ function gridChallenge(c){
   }); };
 }
 
-// Every 1.4 seconds, each cup she hasn't selected hops to a free tile.
+// Every second, each cup she hasn't selected hops to a free tile.
 // A cup she selects stays fixed where it is.
 let cupTimer = null;
 function stopRunawayCup(){ clearInterval(cupTimer); cupTimer = null; stopCountdown(); }
@@ -602,7 +602,7 @@ function startRunawayCups(){
       to.classList.remove("hop"); void to.offsetWidth; to.classList.add("hop");
     });
   };
-  cupTimer = setInterval(hop, 1400);
+  cupTimer = setInterval(hop, 1000);
 }
 
 function wordChallenge(){
@@ -706,7 +706,7 @@ function finalFail(text, emoji){
   setTimeout(() => showYesOnly({ back: false }), 8000);
 }
 
-// A page with only one button. "Back" (when offered) continues the puzzles instead.
+// A page with only one button. "Back" (when offered) returns to the puzzle she came from.
 function showYesOnly({ back }){
   stopRunawayCup();
   hc.innerHTML = `
@@ -720,7 +720,7 @@ function showYesOnly({ back }){
     $("#noBtn").remove();        // no more "Not this time" after this
     pickYes();
   };
-  if (back) $("#goBack").onclick = () => { markSolved(); nextChallenge(); };
+  if (back) $("#goBack").onclick = loadChallenge;
 }
 
 function fail(text, emoji){
