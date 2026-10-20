@@ -198,6 +198,11 @@
   .hc-msg.big{font-size:56px;text-align:center;min-height:64px;animation:cool .6s cubic-bezier(.2,1.6,.4,1) both}
   @keyframes cool{from{transform:scale(.2) rotate(-20deg);opacity:0}to{transform:none;opacity:1}}
   .fail-emoji{display:block;font-size:56px;line-height:1.1;text-align:center;margin-bottom:4px;animation:cool .6s cubic-bezier(.2,1.6,.4,1) both}
+  .final-line{display:inline-flex;align-items:center;gap:10px}
+  .spinner{width:18px;height:18px;border-radius:50%;border:3px solid #f5c6d3;border-top-color:var(--pink);animation:spin .8s linear infinite;flex:none}
+  .yes-only{padding:34px 22px 26px;text-align:center}
+  .yes-only-btn{width:100%;font-size:22px;padding:20px}
+  .back-link{margin-top:16px;background:none;border:0;color:var(--ink-soft);font:700 14px "Nunito",sans-serif;text-decoration:underline;cursor:pointer}
   .shake{animation:shake .45s}
   @keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
   .escape{display:block;width:100%;background:#fff6f9;border:0;border-top:1px solid #f5dbe3;color:var(--pink-deep);font:800 14px "Nunito";padding:13px;cursor:pointer}
@@ -445,7 +450,7 @@ let round = 0, progress = 0;
 const GRID_CHALLENGES = [
   { q:"Select all squares with a <b>coffee cup</b>", tiles:["☕","🌷","🍩","☕","🌸","🥐","🌼","☕","🍓"], answer:"cups" },
   { q:"Select all squares with <b>traffic lights</b>", tiles:["🌸","🌷","🌼","🌺","🌻","🌹","🪻","💐","🌸"], answer:"never", timeLimit:15,
-    failText:"Where is Julie?", failEmoji:"😎", timeoutText:"Failed, please find Julie." },
+    failText:"Where is Julie?", failEmoji:"😎", timeoutText:"Failed, please find Julie.", final:true },
   { q:"Select all images of <b>reasons to say no</b>", tiles:["","","","","","","","",""], answer:"none" },
   { q:"Select all squares of <b>someone hopeful</b>", tiles:["🥺","🥺","🥺","🥺","🥺","🥺","🥺","🥺","🥺"], answer:"all" },
   { q:"Select all <b>flowers that want you to say yes</b>", tiles:["🌷","🌸","🌼","🌺","🌻","🌹","🪻","💐","🌷"], answer:"all" },
@@ -457,8 +462,7 @@ const GRID_CHALLENGES = [
 // 3 = slider, 4 = traffic lights, 5 = type the word again). Then the next puzzle loads anyway.
 const NOTES = {
   1: "✅ Needs further verification. Julie is too cute to decline.",
-  2: "Okay? Verification not enough.",
-  3: "Wait! Haha 😆",
+  3: "Wait!",
 };
 const DEFAULT_NOTE = "✅ Correct! Julie needs further verification…";
 
@@ -552,6 +556,7 @@ function gridChallenge(c){
       c.answer === "none" ? picked === 0 :
       c.answer === "all"  ? picked === all.length : false;
     if (solved) pass(NOTES[round] || DEFAULT_NOTE);
+    else if (c.final) finalFail(c.failText, c.failEmoji);
     else fail(c.failText, c.failEmoji);
   }); };
 }
@@ -574,7 +579,7 @@ function startCountdown(seconds, timeoutText, emoji){
     if (left-- <= 0){
       stopCountdown();
       hc.querySelectorAll(".tile, #verify").forEach(b => b.disabled = true);
-      fail(timeoutText, emoji);
+      finalFail(timeoutText, emoji);
     }
   };
   tick();
@@ -607,7 +612,7 @@ function wordChallenge(){
   $("#word").onkeydown = e => { if (e.key === "Enter") $("#verify").click(); };
   $("#verify").onclick = () => {
     const v = $("#word").value.trim().toLowerCase();
-    if (v === "yes") verifying(() => pass(NOTES[round] || DEFAULT_NOTE));
+    if (v === "yes") verifying(() => showYesOnly({ back: true }));
     else if (v === "no") verifying(() => fail("Hmm, that word was too small to count."));
     else verifying(() => fail("Hint: it's a 3-letter word that starts with Y."));
   };
@@ -677,6 +682,37 @@ function pass(text){
     msg.classList.toggle("big", !/[a-z]/i.test(text)); // emoji-only note shows big
   }
   setTimeout(nextChallenge, 1800);
+}
+
+// Last puzzle: show the failure with a spinner for 8 seconds, then the Yes-only page
+function finalFail(text, emoji){
+  stopRunawayCup();
+  noAttempts++;
+  hc.querySelectorAll(".tile, #verify, #reload").forEach(b => b.disabled = true);
+  const msg = $("#msg");
+  msg.classList.remove("big");
+  msg.style.color = "#d0021b";
+  msg.innerHTML = `<span class="fail-emoji">${emoji}</span>
+    <span class="final-line">${esc(text)} <span class="spinner" aria-label="Loading"></span></span>`;
+  hc.classList.remove("shake"); void hc.offsetWidth; hc.classList.add("shake");
+  setTimeout(() => showYesOnly({ back: false }), 8000);
+}
+
+// A page with only one button. "Back" (when offered) continues the puzzles instead.
+function showYesOnly({ back }){
+  stopRunawayCup();
+  hc.innerHTML = `
+    <div class="hc-head"><small>Julie verification</small><strong>Verified ✅ Only one option left</strong></div>
+    <div class="yes-only">
+      <button class="btn btn-yes yes-only-btn" id="onlyYes">Yes ☕</button>
+      ${back ? `<button class="back-link" id="goBack">← Back, change my answer</button>` : ""}
+    </div>`;
+  $("#onlyYes").onclick = () => {
+    closeCheck();
+    $("#noBtn").remove();        // no more "Not this time" after this
+    pickYes();
+  };
+  if (back) $("#goBack").onclick = nextChallenge;
 }
 
 function fail(text, emoji){
