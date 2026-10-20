@@ -484,6 +484,7 @@ const DEFAULT_NOTE = "✅ Correct! Julie needs further verification…";
 
 function openCheck(){
   round = 0; solved = 0;
+  loadLyrics();
   overlay.classList.add("show");
   renderCheckbox();
 }
@@ -744,16 +745,19 @@ function showYesOnly({ back }){
 }
 
 // Videoke-style lyrics: one line at a time, filling in from left to right
-let lyricTimer = null;
+let lyricTimer = null, lyricsReady = null;
 function stopLyrics(){ clearTimeout(lyricTimer); lyricTimer = null; }
+// Download the lyrics early (when the puzzles open) so they're ready on the final page
+function loadLyrics(){
+  return lyricsReady ??= fetch(CONFIG.lyricsFile, { cache: "no-store" })
+    .then(res => res.ok ? res.text() : "")
+    .then(text => text.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith("#")))
+    .catch(() => []);
+}
 async function startLyrics(){
   stopLyrics();
   const box = $("#karaoke");
-  let lines = [];
-  try {
-    const res = await fetch(CONFIG.lyricsFile, { cache: "no-store" });
-    if (res.ok) lines = (await res.text()).split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith("#"));
-  } catch (e) {}
+  const lines = await loadLyrics();
   if (!lines.length || !box?.isConnected) return;
   let i = 0;
   const show = () => {
@@ -768,7 +772,7 @@ async function startLyrics(){
     i++;
     lyricTimer = setTimeout(show, secs * 1000 + 500);
   };
-  show();
+  lyricTimer = setTimeout(show, 1000);   // first line 1 second after the Yes button appears
 }
 
 function fail(text, emoji){
