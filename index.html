@@ -445,7 +445,8 @@ function confetti(n){
 
 /* ---------- NO flow: the never-ending Julie check ---------- */
 const overlay = $("#overlay"), hc = $("#hc");
-let round = 0, progress = 0;
+let round = 0, solved = 0;   // solved = puzzles won so far (out of PUZZLES)
+const PUZZLES = 4;
 
 const GRID_CHALLENGES = [
   { q:"Select all squares with a <b>coffee cup</b>", tiles:["☕","🌷","🍩","☕","🌸","🥐","🌼","☕","🍓"], answer:"cups" },
@@ -467,7 +468,7 @@ const NOTES = {
 const DEFAULT_NOTE = "✅ Correct! Julie needs further verification…";
 
 function openCheck(){
-  round = 0; progress = 0;
+  round = 0; solved = 0;
   overlay.classList.add("show");
   renderCheckbox();
 }
@@ -506,8 +507,8 @@ function shell(head, body, opts={}){
     <div class="hc-head"><small>${opts.small || "Julie verification"}</small><strong>${head}</strong></div>
     <div class="hc-body">
       ${body}
-      <div class="meter">Verifying you're really Julie… <span id="pct">${progress}%</span>
-        <div class="meter-bar"><i id="bar" style="width:${progress}%"></i></div></div>
+      <div class="meter">Verifying you're really Julie… <span id="pct">${solved}/${PUZZLES}</span>
+        <div class="meter-bar"><i id="bar" style="width:${solved/PUZZLES*100}%"></i></div></div>
       <div class="hc-msg" id="msg"></div>
     </div>
     <div class="round">Attempt #${tries}</div>
@@ -613,8 +614,8 @@ function wordChallenge(){
   $("#verify").onclick = () => {
     const v = $("#word").value.trim().toLowerCase();
     if (v === "yes") verifying(() => showYesOnly({ back: true }));
-    else if (v === "no") verifying(() => fail("Hmm, that word was too small to count."));
-    else verifying(() => fail("Hint: it's a 3-letter word that starts with Y."));
+    else if (v === "no") verifying(() => pass(NOTES[round] || DEFAULT_NOTE));
+    else verifying(() => fail("Type one of the words you see."));
   };
 }
 
@@ -671,12 +672,18 @@ function verifying(cb){
   setTimeout(cb, 900);
 }
 
+// Each puzzle won fills a quarter of the bar
+function markSolved(){
+  solved = Math.min(PUZZLES, Math.max(solved, round));
+  const bar = $("#bar"), pct = $("#pct");
+  if (bar){ bar.style.width = (solved/PUZZLES*100) + "%"; pct.textContent = `${solved}/${PUZZLES}`; }
+}
+
 // A "correct" answer still isn't enough: bump the bar and move on to the next puzzle
 function pass(text){
   stopRunawayCup();
-  progress = Math.min(95, progress + 25);
-  const bar = $("#bar"), pct = $("#pct"), msg = $("#msg");
-  if (bar){ bar.style.width = progress + "%"; pct.textContent = progress + "%"; }
+  markSolved();
+  const msg = $("#msg");
   if (msg){
     msg.style.color = "#2e9a5a"; msg.textContent = text;
     msg.classList.toggle("big", !/[a-z]/i.test(text)); // emoji-only note shows big
@@ -712,16 +719,13 @@ function showYesOnly({ back }){
     $("#noBtn").remove();        // no more "Not this time" after this
     pickYes();
   };
-  if (back) $("#goBack").onclick = nextChallenge;
+  if (back) $("#goBack").onclick = () => { markSolved(); nextChallenge(); };
 }
 
 function fail(text, emoji){
   noAttempts++;
   stopRunawayCup();
-  // progress creeps up… then resets just before the finish
-  progress = progress >= 90 ? 7 : Math.min(99, progress + 20 + (Math.random()*15|0));
-  const bar = $("#bar"), pct = $("#pct"), msg = $("#msg");
-  if (bar){ bar.style.width = progress + "%"; pct.textContent = progress + "%"; }
+  const msg = $("#msg");
   if (msg){
     msg.classList.remove("big");
     msg.style.color = "#d0021b";
