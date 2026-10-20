@@ -704,7 +704,7 @@ function pass(text){
   setTimeout(nextChallenge, 1800);
 }
 
-// Last puzzle: show the failure with a spinner for 8 seconds, then the Yes-only page
+// Last puzzle: show the failure with a spinner for 5 seconds, then the Yes-only page
 function finalFail(text, emoji){
   stopRunawayCup();
   noAttempts++;
@@ -715,7 +715,7 @@ function finalFail(text, emoji){
   msg.innerHTML = `<span class="fail-emoji">${emoji}</span>
     <span class="final-line">${esc(text)} <span class="spinner" aria-label="Loading"></span></span>`;
   hc.classList.remove("shake"); void hc.offsetWidth; hc.classList.add("shake");
-  setTimeout(() => showYesOnly({ back: false }), 8000);
+  setTimeout(() => showYesOnly({ back: false }), 5000);
 }
 
 // A page with only one button. "Back" (when offered) returns to the puzzle she came from.
