@@ -203,13 +203,13 @@
   .yes-only{padding:34px 22px 26px;text-align:center}
   .yes-only-btn{width:100%;font-size:22px;padding:20px}
   .back-link{margin-top:16px;background:none;border:0;color:var(--ink-soft);font:700 14px "Nunito",sans-serif;text-decoration:underline;cursor:pointer}
-  .hc.bare{background:none;box-shadow:none;overflow:visible;max-width:340px}
-  .karaoke{min-height:110px;margin:0 4px 22px;text-align:center;display:flex;flex-direction:column;justify-content:flex-end}
+  .hc.bare{background:none;box-shadow:none;overflow:visible;max-width:560px;min-width:0}
+  .hc.bare .yes-only-btn{display:block;max-width:340px;margin:0 auto}
+  .karaoke{min-width:0;min-height:60px;margin:0 4px 22px;text-align:center;display:flex;flex-direction:column;justify-content:flex-end}
   .k-line{font:800 clamp(20px,5.6vw,26px)/1.3 "Nunito",sans-serif;
     background:linear-gradient(90deg,#ffd166 50%,#fff 50%);background-size:200% 100%;background-position:100% 0;
-    -webkit-background-clip:text;background-clip:text;color:transparent;
+    -webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap;min-width:0;max-width:100%;
     filter:drop-shadow(0 2px 6px rgba(74,43,54,.55));animation:sing var(--d) linear forwards, lyricIn .4s ease both}
-  .k-next{margin-top:10px;font:700 15px/1.3 "Nunito",sans-serif;color:rgba(255,255,255,.85);filter:drop-shadow(0 1px 4px rgba(74,43,54,.6))}
   @keyframes sing{to{background-position:0 0}}
   @keyframes lyricIn{from{opacity:0;transform:translateY(10px)}}
   .hc.bare .yes-only-btn{font-size:26px;padding:24px;animation:pop .6s cubic-bezier(.2,1.4,.4,1) both}
@@ -745,7 +745,7 @@ function showYesOnly({ back }){
   };
 }
 
-// Videoke-style lyrics: each line fills in from left to right, then the next one comes up
+// Videoke-style lyrics: one line at a time, filling in from left to right
 let lyricTimer = null;
 function stopLyrics(){ clearTimeout(lyricTimer); lyricTimer = null; }
 async function startLyrics(){
@@ -760,9 +760,13 @@ async function startLyrics(){
   let i = 0;
   const show = () => {
     if (!box.isConnected) return stopLyrics();
-    const line = lines[i % lines.length], next = lines[(i + 1) % lines.length];
+    const line = lines[i % lines.length];
     const secs = Math.max(2.6, line.length * 0.11);
-    box.innerHTML = `<div class="k-line" style="--d:${secs}s">${esc(line)}</div><div class="k-next">${esc(next)}</div>`;
+    box.innerHTML = `<div class="k-line" style="--d:${secs}s">${esc(line)}</div>`;
+    // shrink long lines until they fit on a single row
+    const el = box.firstChild;
+    for (let size = parseFloat(getComputedStyle(el).fontSize); el.scrollWidth > el.clientWidth && size > 11; size--)
+      el.style.fontSize = size + "px";
     i++;
     lyricTimer = setTimeout(show, secs * 1000 + 500);
   };
