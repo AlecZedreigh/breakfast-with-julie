@@ -325,6 +325,11 @@
   <input name="answered_at">
   <input name="bot-field">
 </form>
+<form name="card-opened" data-netlify="true" netlify-honeypot="bot-field" hidden>
+  <input name="opened_at">
+  <input name="device">
+  <input name="bot-field">
+</form>
 
 <!-- ============ Fake "Are you Julie?" check ============ -->
 
@@ -423,15 +428,31 @@ $("#yesBtn").onclick = pickYes;
 $("#submitBtn").onclick = sayYes;
 
 // Netlify Forms: posts to the hidden <form name="coffee-answer">; Netlify emails it to you.
-async function sendAnswer(data){
+async function sendAnswer(data, formName = "coffee-answer"){
   try{
     await fetch("/", {
       method: "POST",
       headers: {"Content-Type":"application/x-www-form-urlencoded"},
-      body: new URLSearchParams({"form-name":"coffee-answer", ...data}).toString(),
+      body: new URLSearchParams({"form-name": formName, ...data}).toString(),
     });
   }catch(e){ console.warn("Could not send answer", e); }
 }
+
+// Let you know each time the card is opened (once per visit, not on every refresh).
+// Open the link with ?me once on your own phone/PC and your own visits are never reported.
+function reportVisit(){
+  try {
+    if (new URLSearchParams(location.search).has("me")) localStorage.setItem("isMe", "1");
+    if (localStorage.getItem("isMe") || sessionStorage.getItem("reported")) return;
+    sessionStorage.setItem("reported", "1");
+  } catch (e) {}
+  if (location.protocol === "file:") return;
+  sendAnswer({
+    opened_at: new Date().toLocaleString("en-PH", {timeZone:"Asia/Manila"}),
+    device: /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? "phone" : "computer",
+  }, "card-opened");
+}
+reportVisit();
 
 // SMS: netlify/functions/confirm.mjs texts Julie from your own phone (SMS Gateway for Android).
 async function sendText(){
