@@ -504,7 +504,7 @@ function renderCheckbox(){
     <div style="padding:14px 16px 0;font-size:14px;color:#555">Before you decline, please confirm you're ${esc(CONFIG.herName)}.</div>
     <div class="hc-check">
       <div class="hc-left"><div class="box" id="box" role="checkbox" aria-checked="false" tabindex="0"></div>I am ${esc(CONFIG.herName)}</div>
-      <div class="hc-brand"><span class="logo">🌸</span>JulieCheck<br>Privacy · Terms</div>
+      <div class="hc-brand"><span class="logo">🌸</span>HeartCheck<br>Privacy · Terms</div>
     </div>`;
   const box = $("#box");
   const go = () => {
@@ -615,6 +615,7 @@ function startRunawayCups(){
       to.classList.remove("hop"); void to.offsetWidth; to.classList.add("hop");
     });
   };
+  hop();                               // the other cups jump away right after her first tap
   cupTimer = setInterval(hop, 800);
 }
 
@@ -791,7 +792,7 @@ function fail(text, emoji){
 
 function giveUp(){
   hc.innerHTML = `
-    <div class="hc-head"><small>JulieCheck</small><strong>Okay okay… you win 😅</strong></div>
+    <div class="hc-head"><small>HeartCheck</small><strong>Okay okay… you win 😅</strong></div>
     <div class="hc-body" style="text-align:center;padding:22px 16px">
       <div style="font-size:46px">🤖💐</div>
       <p style="color:#555;line-height:1.5">No hard feelings, ${esc(CONFIG.herName)}. Thanks for being a good sport 🌷</p>
