@@ -326,8 +326,12 @@
   <input name="bot-field">
 </form>
 <form name="card-opened" data-netlify="true" netlify-honeypot="bot-field" hidden>
-  <input name="opened_at">
+  <input name="event">
+  <input name="reached">
+  <input name="path">
+  <input name="time">
   <input name="device">
+  <input name="session">
   <input name="bot-field">
 </form>
 
@@ -397,6 +401,7 @@ let noAttempts = 0, answered = false;
 
 // Step 1: tapping Yes just selects it and shows the Submit button
 function pickYes(){
+  track("Tapped Yes");
   $("#yesBtn").classList.add("picked");
   $("#submitWrap").classList.add("show");
   confetti(20);
@@ -407,6 +412,8 @@ function pickYes(){
 async function sayYes(){
   if (answered) return;
   answered = true;
+  track("Confirmed ✅");
+  reportVisit("Confirmed ✅");
   const btn = $("#submitBtn");
   btn.disabled = true; btn.textContent = "Confirming… 💌";
 
@@ -428,31 +435,58 @@ $("#yesBtn").onclick = pickYes;
 $("#submitBtn").onclick = sayYes;
 
 // Netlify Forms: posts to the hidden <form name="coffee-answer">; Netlify emails it to you.
-async function sendAnswer(data, formName = "coffee-answer"){
+async function sendAnswer(data){
   try{
     await fetch("/", {
       method: "POST",
       headers: {"Content-Type":"application/x-www-form-urlencoded"},
-      body: new URLSearchParams({"form-name": formName, ...data}).toString(),
+      body: new URLSearchParams({"form-name":"coffee-answer", ...data}).toString(),
     });
   }catch(e){ console.warn("Could not send answer", e); }
 }
 
-// Let you know each time the card is opened (once per visit, not on every refresh).
-// Open the link with ?me once on your own phone/PC and your own visits are never reported.
-function reportVisit(){
+// ---------- Visit reports (form "card-opened"): when the card is opened, how far she got, and when she confirms ----------
+// Opening the link with ?me once on your own phone/PC means your own visits are never reported.
+const visit = {
+  tracked: false, start: Date.now(), trail: [], sent: 0,
+  id: Math.random().toString(36).slice(2, 7),
+  device: /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? "phone" : "computer",
+};
+function track(step){
+  if (visit.trail.at(-1)?.step === step) return;          // retries of the same page don't repeat
+  const s = Math.round((Date.now() - visit.start) / 1000);
+  visit.trail.push({ step, at: `${s / 60 | 0}:${String(s % 60).padStart(2, "0")}` });
+}
+function reportVisit(event, onlyIfNew = false){
+  if (!visit.tracked || (onlyIfNew && visit.trail.length === visit.sent)) return;
+  visit.sent = visit.trail.length;
+  const data = new URLSearchParams({
+    "form-name": "card-opened", event,
+    reached: visit.trail.at(-1)?.step || "Invite",
+    path: visit.trail.map(t => `${t.step} (${t.at})`).join(" → "),
+    time: new Date().toLocaleString("en-PH", { timeZone: "Asia/Manila" }),
+    device: visit.device, session: visit.id,
+  });
+  // sendBeacon still gets through when she closes the tab or switches apps
+  if (!(navigator.sendBeacon && navigator.sendBeacon("/", data)))
+    fetch("/", { method: "POST", body: data, keepalive: true }).catch(() => {});
+}
+function setupVisitReports(){
+  track("Invite");
+  let firstOpen = true;
   try {
     if (new URLSearchParams(location.search).has("me")) localStorage.setItem("isMe", "1");
-    if (localStorage.getItem("isMe") || sessionStorage.getItem("reported")) return;
+    if (localStorage.getItem("isMe")) return;
+    firstOpen = !sessionStorage.getItem("reported");
     sessionStorage.setItem("reported", "1");
   } catch (e) {}
   if (location.protocol === "file:") return;
-  sendAnswer({
-    opened_at: new Date().toLocaleString("en-PH", {timeZone:"Asia/Manila"}),
-    device: /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? "phone" : "computer",
-  }, "card-opened");
+  visit.tracked = true;
+  if (firstOpen) reportVisit("Opened");
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") reportVisit("Left / switched away", true); });
+  addEventListener("pagehide", () => reportVisit("Left / switched away", true));
 }
-reportVisit();
+setupVisitReports();
 
 // SMS: netlify/functions/confirm.mjs texts Julie from your own phone (SMS Gateway for Android).
 async function sendText(){
@@ -504,6 +538,7 @@ const NOTES = {
 const DEFAULT_NOTE = "✅ Correct! Julie needs further verification…";
 
 function openCheck(){
+  track("Not this time → I am Julie");
   round = 0; solved = 0;
   loadLyrics();
   overlay.classList.add("show");
@@ -564,8 +599,10 @@ function nextChallenge(){
   if (CONFIG.giveUpAfter && round > CONFIG.giveUpAfter) return giveUp();
   loadChallenge();
 }
+const PUZZLE_NAMES = ["", "Coffee cups", "Typing Yes/No", "Smiley slider", "Traffic lights"];
 function loadChallenge(){
   tries++;
+  track(`Puzzle ${round}: ${PUZZLE_NAMES[round] || "extra"}`);
   const kind = round % 3; // rotate challenge types
   if (kind === 1) gridChallenge(GRID_CHALLENGES[(round/3|0) % GRID_CHALLENGES.length]);
   else if (kind === 2) wordChallenge();
@@ -744,6 +781,7 @@ function finalFail(text, emoji){
 // A page with only one button. "Back" (when offered) returns to the puzzle she came from.
 function showYesOnly({ back }){
   stopRunawayCup();
+  track(back ? "Typed Yes → Yes page" : "Final Yes page (lyrics)");
   if (back){
     hc.innerHTML = `
       <div class="hc-head"><small>Heart check</small><strong>Verified ✅ Only one option left</strong></div>
