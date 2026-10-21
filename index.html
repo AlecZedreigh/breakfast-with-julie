@@ -312,7 +312,7 @@
       <span class="corner tl">🌸</span>
       <span class="corner br">🌼</span>
       <div class="big">☕</div>
-      <h1>Yay! <em>See you</em> 😊</h1>
+      <h1>Yay! <em>See you</em></h1>
       <div class="summary" id="summary"></div>
     </div>
   </section>
@@ -340,6 +340,7 @@ const CONFIG = {
   herName:  "Julie",
   day:      "Saturday",
   time:     "8:00 AM",
+  place:    "McDo Marikina",
   // How many "Not this time" verification rounds before the check gives up.
   // 0 = never-ending 😈
   giveUpAfter: 0,
@@ -404,7 +405,7 @@ async function sayYes(){
   const btn = $("#submitBtn");
   btn.disabled = true; btn.textContent = "Confirming… 💌";
 
-  const [, texted] = await Promise.all([
+  await Promise.all([
     sendAnswer({
       answer: "YES ☀️",
       no_attempts: String(noAttempts),
@@ -414,8 +415,7 @@ async function sayYes(){
   ]);
 
   $("#summary").innerHTML =
-    `🗓️ <b>${esc(CONFIG.day)}</b> at <b>${esc(CONFIG.time)}</b><br>🍳 Breakfast` +
-    (texted ? `<br>📱 Check your phone, I just texted you the details!` : "");
+    `🗓️ <b>${esc(CONFIG.day)} ${esc(CONFIG.time)}</b><br>📍 <b>${esc(CONFIG.place)}</b>`;
   show("done");
   confetti(70);
 }
