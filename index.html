@@ -135,7 +135,7 @@
   .done .big{font-size:64px;margin:6px 0 0;animation:bounce 1.6s ease-in-out infinite}
   @keyframes bounce{50%{transform:translateY(-8px) rotate(-6deg)}}
   .summary{background:#fff;border-radius:18px;padding:14px 16px;margin:16px 0 0;text-align:left;border:1.5px dashed var(--rose);font-size:15px;line-height:1.7}
-  .summary b{color:var(--pink-deep)}
+  .summary b{color:#000}
 
   /* ---------- Fake "Julie check" ---------- */
   .overlay{position:fixed;inset:0;z-index:50;background:rgba(74,43,54,.35);backdrop-filter:blur(3px);display:none;place-items:center;padding:16px}
@@ -339,7 +339,7 @@
 const CONFIG = {
   herName:  "Julie",
   day:      "Saturday",
-  time:     "8:00 AM",
+  time:     "8:00AM",
   place:    "McDo Marikina",
   // How many "Not this time" verification rounds before the check gives up.
   // 0 = never-ending 😈
@@ -415,7 +415,7 @@ async function sayYes(){
   ]);
 
   $("#summary").innerHTML =
-    `🗓️ <b>${esc(CONFIG.day)} ${esc(CONFIG.time)}</b><br>📍 <b>${esc(CONFIG.place)}</b>`;
+    `🗓️ <b>${esc(CONFIG.day)} at ${esc(CONFIG.time)}</b><br>📍 <b>${esc(CONFIG.place)}</b>`;
   show("done");
   confetti(70);
 }
