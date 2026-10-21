@@ -328,7 +328,7 @@
 
 <!-- ============ Fake "Are you Julie?" check ============ -->
 
-<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Julie verification">
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Heart check">
   <div class="hc" id="hc"></div>
 </div>
 
@@ -518,7 +518,7 @@ function renderCheckbox(){
 function shell(head, body, opts={}){
   stopRunawayCup();
   hc.innerHTML = `
-    <div class="hc-head"><small>${opts.small || "Julie verification"}</small><strong>${head}</strong></div>
+    <div class="hc-head"><small>${opts.small || "Heart check"}</small><strong>${head}</strong></div>
     <div class="hc-body">
       ${body}
       <div class="meter">Verifying you're really Julie… <span id="pct">${solved}/${PUZZLES}</span>
@@ -724,7 +724,7 @@ function showYesOnly({ back }){
   stopRunawayCup();
   if (back){
     hc.innerHTML = `
-      <div class="hc-head"><small>Julie verification</small><strong>Verified ✅ Only one option left</strong></div>
+      <div class="hc-head"><small>Heart check</small><strong>Verified ✅ Only one option left</strong></div>
       <div class="yes-only">
         <button class="btn btn-yes yes-only-btn" id="onlyYes">Yes ☕</button>
         <button class="back-link" id="goBack">← Back, change my answer</button>
